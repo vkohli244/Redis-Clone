@@ -29,7 +29,7 @@ int read_asmuch(Conn* conn);
 int write_asmuch(Conn* conn);
  //writes as many bytes as possible into the conn.wbuf()
 
-int connection_io(Conn* conn, int new_state);// ?
+int connection_io(Conn* conn);// ?
 //tries to parse/process one complete request from conn->rbuf
 int try_one_request(Conn* conn);
 // looks at conn->state and decides which of the above to call
