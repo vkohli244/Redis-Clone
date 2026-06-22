@@ -29,32 +29,19 @@ Specific learning goals:
 - Learn why production servers use buffering and event loops
 - Eventually implement Redis-like commands such as `GET`, `SET`, and `DEL`
 
-## How to Build
-
-Build the server:
-
-```bash
-g++ -Wall -Wextra -O2 -g server.cpp utils.cpp -o server
-```
-
-Build the client:
-
-```bash
-g++ -Wall -Wextra -O2 -g client.cpp utils.cpp -o client
-```
 
 ## How to Run
 
 In one terminal:
 
 ```bash
-./server
+make run-server
 ```
 
 In another terminal:
 
 ```bash
-./client
+make run-client
 ```
 
 ## Protocol
