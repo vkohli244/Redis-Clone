@@ -11,3 +11,6 @@ while the buffer contains a complete request:
     generate one response
     remove/advance past consumed bytes
 keep incomplete bytes for the next read
+
+
+Creation of connection struct:

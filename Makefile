@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -Wall -Wextra -O2 -g
+CXXFLAGS := -std=c++17 -Wall -Wextra -O2 -g
 
 COMMON_SRCS := utils.cpp
 
