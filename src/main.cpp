@@ -65,7 +65,95 @@ struct Conn {
 //TODO :
 // Write a buf conusme
 // Write buf append
+// handle_read using recv
+// handle_write using send
+// what protocol to use for this?
 //
+static void bufconsume(std::vector<uint8_t> &buf, size_t n) {
+    buf.erase(buf.begin(), buf.begin() + n);
+}
+
+static void bufappend(std::vector<uint8_t> &buf, const char *data, size_t len) {
+    buf.insert(buf.end(), data, data + len);
+}
+
+static void handle_write(Conn *conn){
+    errno = 0; // flush out errno
+
+    while(true){
+        ssize_t rv = send(conn->fd, conn->outgoing.data(), conn->outgoing.size(), 0);
+
+
+        if(rv < 0 && errno == EAGAIN){
+            break; // not ready yet
+        }
+        if( rv < 0 && errno == EINTR){
+            continue;
+        }
+
+        if (rv < 0){
+            msg_errno("send error");
+            return;
+        }
+
+
+        bufconsume(conn->outgoing, (size_t)rv); // add the recieved bytes to the conn read buffer
+        if (conn->outgoing.size() == 0) {   // all data written
+                conn->want_read = true;
+                conn->want_write = false;
+                break;
+        }
+    }
+
+}
+
+static void handle_read(Conn *conn){
+    errno = 0; // flush out errno
+    // read data
+    char buffer[64 * 1024];
+    while(true){
+        int rv = recv(conn->fd, buffer, sizeof(buffer), 0);
+
+
+        if(rv < 0 && errno == EAGAIN){
+            break; // not ready yet
+        }
+        if( rv < 0 && errno == EINTR){
+            continue;
+        }
+
+        if (rv < 0){
+            msg_errno("recv error");
+            return;
+        }
+
+        if (rv == 0) {
+                if (conn->incoming.size() == 0) {
+                    msg("client closed");
+                } else {
+                    msg("unexpected EOF");
+                }
+                conn->want_close = true;
+                return; // want close
+        }
+        bufappend(conn->incoming, buffer, (size_t)rv); // add the recieved bytes to the conn read buffer
+    }
+
+    while(try_one_request()){} // clients might send multiple messages together (pipelining)
+
+    if(conn->outgoing.size() > 0){
+        conn->want_read = false;
+        conn->want_write = true;
+        return handle_write(conn);
+    }
+
+}
+
+
+
+
+
+
 static Conn *handle_accept(int fd) {
 
     struct sockaddr_in client_addr;
@@ -127,7 +215,7 @@ int main(int argc, char **argv) {
   int client_addr_len = sizeof(client_addr);
   std::cout << "Waiting for clients to connect...\n";
 
-  std::vector<Struct pollfd> poll_args;
+  std::vector<struct pollfd> poll_args;
   std::vector<Conn *> fd2conn;
 
 
@@ -141,7 +229,7 @@ int main(int argc, char **argv) {
               continue; // go to next fd
         }
 
-          struct pollfd pfd = {conn->fd, POLLERR, 0};
+        struct pollfd pfd = {conn->fd, 0, 0};
 
         if(conn->want_read){
               pfd.events |= POLLIN;
@@ -156,7 +244,7 @@ int main(int argc, char **argv) {
 
       reuse = poll(poll_args.data(),(nfds_t)poll_args.size(), -1);
 
-    if (reuse < 0 && errno = EINTR){
+    if (reuse < 0 && errno == EINTR){
         continue; // No error occured build the polled fds vector again
     }
 
