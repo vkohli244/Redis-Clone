@@ -17,7 +17,9 @@
 #include <errno.h>
 #include <netinet/ip.h>
 #include <vector>
+struct Conn; // already defined above handle_write, so this isn't needed separately
 
+static bool try_one_request(Conn *conn); // add this line before handle_write/handle_read
 
 static void msg(const char *msg) {
     fprintf(stderr, "%s\n", msg);
@@ -133,7 +135,7 @@ static void handle_read(Conn *conn){
         bufappend(conn->incoming, buffer, (size_t)rv); // add the recieved bytes to the conn read buffer
     }
 
-    while(try_one_request()){} // clients might send multiple messages together (pipelining)
+    while(try_one_request(conn)){}; // clients might send multiple messages together (pipelining)
 
     if(conn->outgoing.size() > 0){
         conn->want_read = false;
