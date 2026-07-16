@@ -314,6 +314,7 @@ int main(int argc, char **argv) {
 
     if(poll_args[0].revents){
         if(Conn *conn = handle_accept(server_fd)){
+            std::cout << "CLient Connecteded";
             if(fd2conn.size() <=(size_t)conn->fd){
                 fd2conn.resize(conn->fd + 1);
             }
