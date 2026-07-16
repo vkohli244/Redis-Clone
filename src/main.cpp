@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
 
     if(poll_args[0].revents){
         if(Conn *conn = handle_accept(server_fd)){
-            std::cout << "CLient Connecteded\n";
+            std::cout << "\nCLient Connecteded\n";
             if(fd2conn.size() <=(size_t)conn->fd){
                 fd2conn.resize(conn->fd + 1);
             }
@@ -341,7 +341,7 @@ int main(int argc, char **argv) {
         }
 
         if(ready & POLLERR ||conn->want_close){
-            std::cout << "Client closed";
+            std::cout << "Client closed\n";
             fd2conn[poll_args[i].fd] = NULL;
             close(poll_args[i].fd);
             delete conn;
