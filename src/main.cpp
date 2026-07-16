@@ -104,48 +104,49 @@ static void handle_write(Conn *conn){
 }
 
 static void handle_read(Conn *conn){
-    errno = 0; // flush out errno
-    // read data
+    errno = 0;
     char buffer[64 * 1024];
+    bool eof = false;
+
     while(true){
         int rv = recv(conn->fd, buffer, sizeof(buffer), 0);
 
-
         if(rv < 0 && errno == EAGAIN){
-            break; // not ready yet
+            break;
         }
-        if( rv < 0 && errno == EINTR){
+        if(rv < 0 && errno == EINTR){
             continue;
         }
-
-        if (rv < 0){
+        if(rv < 0){
             msg_errno("recv error");
+            conn->want_close = true;
             return;
         }
-
         if (rv == 0) {
-                if (conn->incoming.size() == 0) {
-                    msg("client closed");
-                } else {
-                    msg("unexpected EOF");
-                }
-                conn->want_close = true;
-                return; // want close
+            eof = true;
+            break;
         }
-        bufappend(conn->incoming, buffer, (size_t)rv); // add the recieved bytes to the conn read buffer
+        bufappend(conn->incoming, buffer, (size_t)rv);
     }
 
-    while(try_one_request(conn)){}; // clients might send multiple messages together (pipelining)
+    while(try_one_request(conn)){}; // parse whatever full requests we have
+
+    if (eof) {
+        if (conn->incoming.size() != 0) {
+            msg("unexpected EOF with incomplete request");
+        }
+    }
 
     if(conn->outgoing.size() > 0){
         conn->want_read = false;
         conn->want_write = true;
-        return handle_write(conn);
+        handle_write(conn);
     }
 
+    if (eof) {
+        conn->want_close = true;
+    }
 }
-
-
 
 
 
