@@ -34,6 +34,6 @@ void bufappend(std::vector<uint8_t> &buf, const char *data, size_t len);
 
 void handle_request(Conn *conn);
 
-bool handle_write(Conn *conn);
+void handle_write(Conn *conn);
 
 void bufconsume(std::vector<uint8_t> &buf, std::size_t count);

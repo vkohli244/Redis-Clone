@@ -60,8 +60,7 @@ void bufconsume(std::vector<uint8_t> &buf, std::size_t count) {
   buf.erase(buf.begin(), buf.begin() + count);
 }
 
-bool handle_write(Conn *conn) {
-
+void handle_write(Conn *conn) {
   while (!conn->outgoing.empty()) {
     const ssize_t rv =
         send(conn->fd, conn->outgoing.data(), conn->outgoing.size(), 0);
