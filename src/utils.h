@@ -30,3 +30,5 @@ void die(const char *msg);
 void handle_read(Conn *conn);
 
 void bufappend(std::vector<uint8_t> &buf, const char *data, size_t len);
+
+void handle_request(Conn *conn);

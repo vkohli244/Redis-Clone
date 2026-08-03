@@ -10,6 +10,7 @@
 #include <assert.h>
 
 
+
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf;
@@ -113,9 +114,7 @@ int main(int argc, char **argv) {
               close(fds[i].fd);
               delete conn;
           }
-
       }
-
     }
     close(server_fd);
     return 0;

@@ -1,4 +1,9 @@
+#pragma once
 #include "utils.h"
+#include "parser.h"
+#include <string>
+#include <cstring>
+#include <sys/socket.h>
 
 void msg(const char *msg) {
     fprintf(stderr, "%s\n", msg);
@@ -60,8 +65,9 @@ void handle_read(Conn *conn){
 
     while(true){
         ssize_t bytes_recieved = recv(conn->fd, buffer, sizeof(buffer), 0);
+
         if (bytes_recieved > 0){
-            bufappend(conn->incoming,buffer, bytes_recieved);
+            bufappend(conn->incoming, buffer, bytes_recieved);
             continue;
         }
 
@@ -86,10 +92,63 @@ void handle_read(Conn *conn){
             return;
         }
 
-
     } // end of while
 
 
 
+
+}
+
+
+void handle_request(Conn *conn){
+
+    ParseResult result = small_parse(conn->incoming);
+
+    if(result.status == ParseStatus::Incomplete){
+        return;
+    }
+
+    if(result.status == ParseStatus::Invalid){
+        msg("Invalud RESP request");
+        conn->want_close = true;
+    }
+
+    if(result.args.empty()){
+        msg("No arguments present");
+        conn->want_close = true;
+        return;
+    }
+
+    // Next step is to handle writes
+    //
+    const std::string &command = result.args[0];
+
+
+
+    if (command == "PING"){
+        const char* response = "+PONG";
+        send(conn->fd, response, std::strlen(response),0);
+    }
+    else if(command == "ECHO"){
+        if(result.args.size() != 2){
+            const char* response = "-ERR wrong number of arguments for 'ECHO' command\r\n";
+            send(conn->fd, response, std::strlen(response),0);
+        }
+        else{
+            const std::string &message = result.args[1];
+            const std::string response = "$"
+                                        + std::to_string(message.size())
+                                        + "\r\n"
+                                        + message
+                                        + "\r\n";
+            send(conn->fd,response.data(), response.size(),0);
+        }
+    }
+    else{
+        const char* response = "-ERR unknown command\r\n";
+        send(conn->fd, response, std::strlen(response),0);
+    }
+
+    // now write bufconsume
 
 }
