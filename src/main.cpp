@@ -68,6 +68,10 @@ int main(int argc, char **argv) {
               pfd.events |= POLLIN;
           }
 
+          if(conn->want_write){
+              pfd.events |= POLLOUT;
+          }
+
           fds.push_back(pfd);
       }
 
@@ -106,6 +110,11 @@ int main(int argc, char **argv) {
           if(ready & POLLIN){
               assert(conn->want_read);
               handle_read(conn);
+          }
+
+          if(ready & POLLOUT){
+              assert(conn->want_write);
+              handle_write(conn);
           }
 
           if(ready & POLLERR ||conn->want_close){
