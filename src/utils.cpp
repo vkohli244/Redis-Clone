@@ -124,7 +124,7 @@ void handle_read(Conn *conn) {
 
 void handle_request(Conn *conn) {
   while (true) {
-    ParseResult result = small_parse(conn->incoming);
+    ParseResult result = parse_command(conn->incoming);
 
     if (result.status == ParseStatus::Incomplete) {
       return;
