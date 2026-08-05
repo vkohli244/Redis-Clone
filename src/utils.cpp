@@ -76,16 +76,16 @@ void handle_write(Conn *conn) {
 
     if (rv < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
       msg("socket not currently writable");
-      return false;
+      return;
     }
 
     msg_errno("send error");
     conn->want_close = true;
-    return false;
+    return;
   }
   conn->want_write = false;
   conn->want_read = true;
-  return true;
+  return ;
 }
 
 void handle_read(Conn *conn) {

@@ -22,6 +22,6 @@ std::size_t find_crlf(
     std::size_t start
 );
 
-ParseResult small_parse(
+ParseResult parse_command(
     const std::vector<std::uint8_t>& buf
 );

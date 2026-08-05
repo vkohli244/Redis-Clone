@@ -20,7 +20,7 @@ std::size_t find_crlf(
     return NPOS;
 }
 
-ParseResult small_parse(const std::vector<uint8_t>& buf) {
+ParseResult parse_command (const std::vector<uint8_t>& buf) {
     ParseResult result;
 
     if (buf.empty()) {
