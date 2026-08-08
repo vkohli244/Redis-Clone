@@ -1,7 +1,7 @@
-#include "connection.h"
+#include "../include/connection.h"
 
-#include "command_handler.h"
-#include "parser.h"
+#include "../include/command_handler.h"
+#include "../include/parser.h"
 
 #include <cerrno>
 #include <cstddef>

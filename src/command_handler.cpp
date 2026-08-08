@@ -1,4 +1,4 @@
-#include "command_handler.h"
+#include "../include/command_handler.h"
 
 CommandHandler::CommandHandler(Database &db) : db_(db) {}
 
