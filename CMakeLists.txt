@@ -8,7 +8,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(redis
     src/main.cpp
-    src/utils.cpp
+    src/database.cpp
+    src/command_handler.cpp
+    src/connection.cpp
+    src/server.cpp
     src/parser.cpp
 )
 
