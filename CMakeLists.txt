@@ -15,4 +15,6 @@ add_executable(redis
     src/parser.cpp
 )
 
-target_include_directories(redis PRIVATE src)
+target_include_directories(redis PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
