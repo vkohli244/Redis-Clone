@@ -1,4 +1,4 @@
-#include "../include/database.h"
+#include "database.h"
 
 void Database::set(const std::string &key, const std::string &value) {
   data_.insert_or_assign(key, value);
