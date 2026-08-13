@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef SERVER_H
+#define SERVER_H
+
 #include "command_handler.h"
 #include "connection.h"
 #include "database.h"
@@ -20,3 +23,5 @@ private:
   Database database_;
   CommandHandler command_handler_;
 };
+
+#endif

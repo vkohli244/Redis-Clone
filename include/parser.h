@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef PARSER_H
+#define PARSER_H
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -16,3 +17,5 @@ struct ParseResult {
 std::size_t find_crlf(const std::vector<std::uint8_t> &buf, std::size_t start);
 
 ParseResult parse_command(const std::vector<std::uint8_t> &buf);
+
+#endif

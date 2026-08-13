@@ -9,7 +9,7 @@
 #include <string>
 #include <sys/socket.h>
 
-namespace {
+namespace { // private functions for this file only
 void msg(const char *msg) { fprintf(stderr, "%s\n", msg); }
 
 void msg_errno(const char *msg) {

@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef CONNECTION_H
+#define CONNECTION_H
 #include <cstdint>
 #include <vector>
 
@@ -21,3 +22,4 @@ public:
   std::vector<std::uint8_t> incoming;
   std::vector<std::uint8_t> outgoing;
 };
+#endif

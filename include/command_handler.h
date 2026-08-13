@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef COMMAND_HANDLER_H
+#define COMMAND_HANDLER_H
 
 #include "database.h"
 
@@ -13,4 +15,6 @@ public:
 
 private:
   Database &db_;
+  std::string handle_set(const std::vector<std::string> &args);
 };
+#endif

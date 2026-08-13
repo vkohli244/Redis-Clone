@@ -1,17 +1,36 @@
 #include "database.h"
 
-void Database::set(const std::string &key, const std::string &value) {
-  data_.insert_or_assign(key, value);
-  // don't store the value of this because returns true if insert, false if
-  // assigned both mean true in our application
-}
+void Database::set(const std::string &key, const std::string &value,
+                   std::optional<std::chrono::milliseconds> duration) {
 
-std::optional<std::string> Database::get(const std::string &key) const {
-  if (auto search = data_.find(key); search != data_.end()) {
-    return search->second;
+  std::optional<std::chrono::steady_clock::time_point> expiry;
+
+  if (duration) { // no duration passed to the function means that no EX or PX argument
+    expiry = std::chrono::steady_clock::now() + *duration;
   }
 
-  return std::nullopt;
+  Entry entry = {value, expiry};
+  data_.insert_or_assign(key, entry);
+}
+
+std::optional<std::string> Database::get(const std::string &key) {
+    auto search = data_.find(key);      // find key , returns iterable object
+
+    if (search == data_.end()) {        // if the iterable is the end that means the key doesn't exist so return nullopt
+        return std::nullopt;
+    }
+
+    const auto &entry = search->second; // get the entry object
+
+    if (entry.expiry) {                 // if the entry object contains an expiry time
+        const auto now = std::chrono::steady_clock::now();
+
+        if (now >= *entry.expiry) {     // check if the expiry time has passed
+            return std::nullopt;
+        }
+    }
+
+    return entry.value;                 // otherwise return
 }
 
 std::size_t Database::del(const std::string &key) {
