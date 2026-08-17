@@ -1,6 +1,8 @@
 #include "database.h"
 
-void Database::set(const std::string &key, const std::string &value,
+#include <utility>
+
+void Database::set(const std::string &key, std::string value,
                    std::optional<std::chrono::milliseconds> duration) {
 
   std::optional<std::chrono::steady_clock::time_point> expiry;
@@ -9,8 +11,7 @@ void Database::set(const std::string &key, const std::string &value,
     expiry = std::chrono::steady_clock::now() + *duration;
   }
 
-  Entry entry = {value, expiry};
-  data_.insert_or_assign(key, entry);
+  data_.insert_or_assign(key, Entry{std::move(value), expiry});
 }
 
 std::optional<std::string> Database::get(const std::string &key) {

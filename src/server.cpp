@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <utility>
 
 namespace {
 void msg_errno(const char *msg) {
@@ -45,11 +46,13 @@ Connection *handle_accept(int fd) {
 
   struct sockaddr_in client_addr;
   socklen_t client_addr_len = sizeof(client_addr);
-  int client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len);
+  int client_fd =
+      accept(fd, reinterpret_cast<struct sockaddr *>(&client_addr),
+             &client_addr_len);
 
   if (client_fd < 0) {
     msg_errno("accept() error");
-    return NULL;
+    return nullptr;
   }
 
   fd_set_nb(client_fd);
@@ -82,8 +85,8 @@ int RedisServer::run() {
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(6379);
 
-  if (bind(server_fd_, (struct sockaddr *)&server_addr, sizeof(server_addr)) !=
-      0) {
+  if (bind(server_fd_, reinterpret_cast<struct sockaddr *>(&server_addr),
+           sizeof(server_addr)) != 0) {
     std::cerr << "Failed to bind to port 6379\n";
     return 1;
   }
@@ -120,7 +123,12 @@ int RedisServer::run() {
       fds_.push_back(pfd);
     }
 
-    int rv = poll(fds_.data(), (nfds_t)fds_.size(), -1);
+    if (!std::in_range<nfds_t>(fds_.size())) {
+      die("too many file descriptors to poll");
+    }
+
+    const auto poll_count = static_cast<nfds_t>(fds_.size());
+    int rv = poll(fds_.data(), poll_count, -1);
 
     if (rv < 0 && errno == EINTR) {
       continue; // No error occured build the polled fds vector again
@@ -134,23 +142,26 @@ int RedisServer::run() {
     if (fds_[0].revents & POLLIN) {
       if (Connection *conn = handle_accept(server_fd_)) {
         std::cout << "Client Connected";
-        if (fd2conn_.size() <= (size_t)conn->fd) {
-          fd2conn_.resize(conn->fd + 1);
+        const auto connection_index = static_cast<std::size_t>(conn->fd);
+        if (fd2conn_.size() <= connection_index) {
+          fd2conn_.resize(connection_index + 1);
         }
 
-        fd2conn_[conn->fd] = conn;
+        fd2conn_[connection_index] = conn;
       }
     }
 
     // Check every client (index 1 onward) for incoming data
     for (size_t i = 1; i < fds_.size(); ++i) { // note: skip the 1st
-      uint32_t ready = fds_[i].revents;
+      const short ready = fds_[i].revents;
 
       if (ready == 0) {
         continue;
       }
 
-      Connection *conn = fd2conn_[fds_[i].fd];
+      const auto connection_index =
+          static_cast<std::size_t>(fds_[i].fd);
+      Connection *conn = fd2conn_[connection_index];
 
       if (ready & POLLIN) {
         assert(conn->want_read);
@@ -164,7 +175,7 @@ int RedisServer::run() {
 
       if (ready & POLLERR || conn->want_close) {
         std::cout << "Client closed\n";
-        fd2conn_[fds_[i].fd] = NULL;
+        fd2conn_[connection_index] = nullptr;
         close(fds_[i].fd);
         delete conn;
       }

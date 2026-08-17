@@ -1,5 +1,9 @@
 #include "command_handler.h"
 
+#include <charconv>
+#include <string_view>
+#include <system_error>
+
 #define to_MS 1000
 CommandHandler::CommandHandler(Database &db) : db_(db) {}
 
@@ -23,7 +27,7 @@ std::string CommandHandler::execute(const std::vector<std::string> &args) {
       response = "-ERR wrong number of arguments for "
                  "'ECHO' command\r\n";
     } else {
-      const std::string &message = args[1];
+      const std::string &message = args[1]; // change to use modern c++ string_view
 
       response =
           "$" + std::to_string(message.size()) + "\r\n" + message + "\r\n";
@@ -57,25 +61,20 @@ std::string CommandHandler::handle_set(const std::vector<std::string> &args) {
   }
 
   // SET with expiry option
-  const std::string &option = args[3];
-  const std::string &expiry_arg = args[4];
+  const std::string_view option = args[3];
+  const std::string_view expiry_arg = args[4];
   int duration{};
 
-  // check if entire expiry_arg is a string
-  for (char ch : expiry_arg) {
-    if (!isdigit(ch)) { // consider switching to static_cast<unsigned char>
-                        // (ch) for portability
-      return "-ERR Invalid argument for expiry duration \r\n";
-    }
+  const char *const expiry_end = expiry_arg.data() + expiry_arg.size();
+  const auto [parse_end, error] =
+      std::from_chars(expiry_arg.data(), expiry_end, duration);
+
+  if (error == std::errc::result_out_of_range) {
+    return "-ERR duration out of range\r\n";
   }
 
-  // convert expiry_arg to duration
-  try {
-    duration = std::stoi(expiry_arg);
-  } catch (std::invalid_argument const &ex) {
-    return "-ERR Invalid argument for expiry duation\r\n";
-  } catch (std::out_of_range const &ex) {
-    return "-ERR duration out of range\r\n";
+  if (error != std::errc{} || parse_end != expiry_end) {
+    return "-ERR Invalid argument for expiry duration \r\n";
   }
 
   if (duration <= 0) {

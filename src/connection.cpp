@@ -3,10 +3,12 @@
 #include "command_handler.h"
 #include "parser.h"
 
+#include <cassert>
 #include <cerrno>
 #include <cstddef>
 #include <cstdio>
 #include <string>
+#include <string_view>
 #include <sys/socket.h>
 
 namespace { // private functions for this file only
@@ -16,13 +18,14 @@ void msg_errno(const char *msg) {
   fprintf(stderr, "[errno:%d] %s\n", errno, msg);
 }
 
-void bufappend(std::vector<std::uint8_t> &buf, const char *data,
-               std::size_t len) {
-  buf.insert(buf.end(), data, data + len);
+void bufappend(std::vector<std::uint8_t> &buf, std::string_view data) {
+  buf.insert(buf.end(), data.begin(), data.end());
 }
 
 void bufconsume(std::vector<std::uint8_t> &buf, std::size_t count) {
-  buf.erase(buf.begin(), buf.begin() + count);
+  assert(count <= buf.size());
+  using Difference = std::vector<std::uint8_t>::difference_type;
+  buf.erase(buf.begin(), buf.begin() + static_cast<Difference>(count));
 }
 } // namespace
 
@@ -62,7 +65,9 @@ void Connection::handle_read(CommandHandler &command_handler) {
     const ssize_t bytes_received = recv(fd, buffer, sizeof(buffer), 0);
 
     if (bytes_received > 0) {
-      bufappend(incoming, buffer, static_cast<std::size_t>(bytes_received));
+      bufappend(
+          incoming,
+          std::string_view{buffer, static_cast<std::size_t>(bytes_received)});
       continue;
     }
 
@@ -111,7 +116,7 @@ void Connection::handle_request(CommandHandler &command_handler) {
     std::string response = command_handler.execute(result.args);
     bufconsume(incoming, result.bytes_consumed);
 
-    bufappend(outgoing, response.data(), response.size());
+    bufappend(outgoing, response);
 
     want_read = false;
     want_write = true;

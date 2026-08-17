@@ -9,7 +9,7 @@
 
 class Database {
 public:
-  void set(const std::string &key, const std::string &value,
+  void set(const std::string &key, std::string value,
            std::optional<std::chrono::milliseconds> duration = std::nullopt);
 
   std::optional<std::string> get(const std::string &key);
