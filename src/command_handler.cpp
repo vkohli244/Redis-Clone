@@ -9,6 +9,10 @@
 CommandHandler::CommandHandler(Database &db) : db_(db) {}
 
 std::string CommandHandler::execute(const std::vector<std::string> &args) {
+  if (args.empty()) {
+    return "-ERR empty command\r\n";
+  }
+
   const std::string &command = args[0];
   std::string response;
 

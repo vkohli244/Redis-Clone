@@ -21,5 +21,8 @@ public:
   bool want_write = false;
   std::vector<std::uint8_t> incoming;
   std::vector<std::uint8_t> outgoing;
+
+private:
+  bool close_after_write_ = false;
 };
 #endif

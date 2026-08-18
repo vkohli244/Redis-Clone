@@ -27,6 +27,7 @@ std::optional<std::string> Database::get(const std::string &key) {
         const auto now = std::chrono::steady_clock::now();
 
         if (now >= *entry.expiry) {     // check if the expiry time has passed
+            data_.erase(search);
             return std::nullopt;
         }
     }
@@ -37,6 +38,11 @@ std::optional<std::string> Database::get(const std::string &key) {
 std::size_t Database::del(const std::string &key) {
 
   if (auto search = data_.find(key); search != data_.end()) {
+    if (search->second.expiry &&
+        std::chrono::steady_clock::now() >= *search->second.expiry) {
+      data_.erase(search);
+      return 0;
+    }
     return data_.erase(key);
   }
 

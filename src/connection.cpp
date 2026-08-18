@@ -27,13 +27,22 @@ void bufconsume(std::vector<std::uint8_t> &buf, std::size_t count) {
   using Difference = std::vector<std::uint8_t>::difference_type;
   buf.erase(buf.begin(), buf.begin() + static_cast<Difference>(count));
 }
+
+ssize_t send_without_sigpipe(int fd, const void *buffer, std::size_t size) {
+#ifdef MSG_NOSIGNAL
+  return send(fd, buffer, size, MSG_NOSIGNAL);
+#else
+  return send(fd, buffer, size, 0);
+#endif
+}
 } // namespace
 
 Connection::Connection(int fd) : fd(fd), want_read(true) {}
 
 void Connection::handle_write() {
   while (!outgoing.empty()) {
-    const ssize_t rv = send(fd, outgoing.data(), outgoing.size(), 0);
+    const ssize_t rv =
+        send_without_sigpipe(fd, outgoing.data(), outgoing.size());
 
     if (rv > 0) {
       bufconsume(outgoing, static_cast<std::size_t>(rv));
@@ -45,7 +54,6 @@ void Connection::handle_write() {
     }
 
     if (rv < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-      msg("socket not currently writable");
       return;
     }
 
@@ -54,7 +62,8 @@ void Connection::handle_write() {
     return;
   }
   want_write = false;
-  want_read = true;
+  want_read = !close_after_write_;
+  want_close = close_after_write_;
   return;
 }
 
@@ -72,8 +81,14 @@ void Connection::handle_read(CommandHandler &command_handler) {
     }
 
     if (bytes_received == 0) {
-      want_close = true;
-      msg("eof");
+      handle_request(command_handler);
+      if (outgoing.empty()) {
+        want_close = true;
+      } else {
+        close_after_write_ = true;
+        want_read = false;
+        want_write = true;
+      }
       return;
     }
 
@@ -107,12 +122,6 @@ void Connection::handle_request(CommandHandler &command_handler) {
       return;
     }
 
-    if (result.args.empty()) {
-      msg("No arguments present");
-      want_close = true;
-      return;
-    }
-
     std::string response = command_handler.execute(result.args);
     bufconsume(incoming, result.bytes_consumed);
 
@@ -120,6 +129,5 @@ void Connection::handle_request(CommandHandler &command_handler) {
 
     want_read = false;
     want_write = true;
-    return;
   }
 }
