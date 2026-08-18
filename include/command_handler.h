@@ -15,6 +15,8 @@ public:
 
 private:
   Database &db_;
+  std::string handle_del(const std::vector<std::string> &args);
+  std::string handle_get(const std::vector<std::string> &args);
   std::string handle_set(const std::vector<std::string> &args);
 };
 #endif

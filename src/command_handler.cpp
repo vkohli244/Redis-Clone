@@ -1,6 +1,7 @@
 #include "command_handler.h"
 
 #include <charconv>
+#include <cstddef>
 #include <string_view>
 #include <system_error>
 
@@ -34,15 +35,43 @@ std::string CommandHandler::execute(const std::vector<std::string> &args) {
     }
   } else if (command == "SET") {
     return handle_set(args);
-  }
-  else if (command == "GET"){
-      // implement handle_get()
-  }
-  else{
-      return "-ERR unknown command\r\n";
+  } else if (command == "GET") {
+    return handle_get(args);
+  } else if (command == "DEL") {
+    return handle_del(args);
+  } else {
+    return "-ERR unknown command\r\n";
   }
 
   return response;
+}
+
+std::string CommandHandler::handle_del(const std::vector<std::string> &args) {
+  if (args.size() < 2) {
+    return "-ERR wrong number of arguments for 'DEL' command\r\n";
+  }
+
+  std::size_t deleted_count = 0;
+
+  for (std::size_t index = 1; index < args.size(); ++index) {
+    deleted_count += db_.del(args[index]);
+  }
+
+  return ":" + std::to_string(deleted_count) + "\r\n";
+}
+
+std::string CommandHandler::handle_get(const std::vector<std::string> &args) {
+  if (args.size() != 2) {
+    return "-ERR wrong number of arguments for 'GET' command\r\n";
+  }
+
+  const auto value = db_.get(args[1]);
+
+  if (!value) {
+    return "$-1\r\n";
+  }
+
+  return "$" + std::to_string(value->size()) + "\r\n" + *value + "\r\n";
 }
 
 std::string CommandHandler::handle_set(const std::vector<std::string> &args) {
